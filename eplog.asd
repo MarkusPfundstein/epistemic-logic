@@ -7,5 +7,6 @@
   :license "MIT"
   :components ((:file "package")
 	       (:file "src/kripke")
+	       (:file "src/del")
 	       (:file "src/tests")))
 

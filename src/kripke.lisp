@@ -1,8 +1,18 @@
 (defpackage #:kripke
   (:export #:models 
 	   #:make-world 
+	   #:world-name
+	   #:find-world-by-name
+	   #:find-relation-for-agent
+	   #:kripke-model-worlds
+	   #:kripke-model-agents
+	   #:kripke-model-real-worlds
+	   #:kripke-model-relations
+	   #:world-propositions
 	   #:make-agent
 	   #:make-relation 
+	   #:relation-from
+	   #:relation-to
 	   #:make-kripke-model)
   (:use #:cl))
 
@@ -28,7 +38,8 @@
 (defstruct kripke-model
   worlds 
   relations
-  agents)
+  agents
+  real-worlds)
 
 (defun find-world-by-name (M name)
   (find-if #'(lambda (n) (string= (world-name n) name))
@@ -37,11 +48,14 @@
 (defun find-agent-by-name (M name)
   (let ((up-name (string-upcase name)))
     ;(format t "~S~%" up-name)
-    (find-if #'(lambda (n) (string= (string-upcase (agent-name n)) up-name))
+    (find-if #'(lambda (n) (string= 
+			    (string-upcase (agent-name n)) up-name))
 	     (kripke-model-agents M))))
 
 (defun find-relation-for-agent (M a)
-  (cdr (find-if #'(lambda (x) (eq (car x) a)) (kripke-model-relations M))))
+  (cdr (find-if #'(lambda (x) 
+		    (eq (agent-name (car x)) (agent-name a))) 
+		(kripke-model-relations M))))
 
 (defun find-relation-for-agent-and-world (M a w)
   (remove-if-not #'(lambda (v) (eq (relation-from v) w)) (find-relation-for-agent M a)))
@@ -50,7 +64,11 @@
   (not (null (member2 p (world-propositions w)))))
 
 (defun possible (M w a-name form)
+  ;(format t "a-name: ~S~%" a-name)
   (let ((a (find-agent-by-name M (string a-name))))
+    (when (not a)
+      (error "error finding agent in function possible"))
+    ;(format t "agent: ~S~%" a)
     (not (null (find-if #'(lambda (r) (models M (relation-to r) form))
 			(find-relation-for-agent-and-world M a w))))))
 	       
@@ -76,13 +94,17 @@
        (possible M w (car rest-form) (cadr rest-form)))
       (:KNOWS
        (not (possible M w (car rest-form) (list :NOT (cadr rest-form)))))
+      (:TRUE
+       t)
       (t 
        ;(format t "fall-trough t~%")
        (models M w op)))))
 
 (defun models (M w form)
   ;(format t "MODELS: ~S~%" form)
-  (if (val w form) 
-      t
-      (when (and (not (null form)) (listp form)) 
-	(models-list M w form))))
+  (if (stringp w)
+      (models M (find-world-by-name M w) form)
+      (if (val w form) 
+	  t
+	  (when (and (not (null form)) (listp form)) 
+	    (models-list M w form)))))
