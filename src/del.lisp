@@ -9,19 +9,31 @@
    'string 
    "(" w ", " e ")"))
 
+(defun find-world (name worlds)
+  (find-if #'(lambda (n) (string= (world-name n) name)) worlds))
+
 (defun make-new-worlds (M A)
   (let ((new-worlds '()))
     (dolist (w (kripke-model-worlds M))
       (dolist (e (kripke-model-worlds A))
 	(when (models M w (world-propositions e))
-;	  (format t "add world: ~S~%" w)
-	  (setf new-worlds 
-		(append new-worlds 
-			(list (make-world :name 
-					  (make-new-world-name (world-name w) (world-name e))
-					  :propositions (world-propositions w))))))))
-    new-worlds))
+	  ;(format t "add world: ~S~%" w)
+	  (push (make-world 
+		 :name (make-new-world-name (world-name w) (world-name e))
+		 :propositions (world-propositions w))
+		new-worlds))))
+    (reverse new-worlds)))
 
+(defun make-new-relation (rel-m rel-a new-worlds)
+  (let* ((new-from-name (make-new-world-name (world-name (relation-from rel-m))
+					     (world-name (relation-from rel-a))))
+	 (new-to-name (make-new-world-name (world-name (relation-to rel-m))
+					   (world-name (relation-to rel-a))))
+	 (from (find-world new-from-name new-worlds))
+	 (to (find-world new-to-name new-worlds)))
+    (when (and from to)
+      (make-relation :from from :to to))))
+ 
 (defun make-new-relations-for-agent (M A new-worlds ag)    
   ;(format t "A: ~S~%" A)
   (let ((new-relations-for-agent '())
@@ -30,21 +42,11 @@
     ;(format t "rel-m: ~S~%rel-a: ~S~%" relations-ag-m relations-ag-a)
     (dolist (rel-m relations-ag-m)
       (dolist (rel-a relations-ag-a)
-	(let* ((new-from-name (make-new-world-name (world-name (relation-from rel-m))
-						   (world-name (relation-from rel-a))))
-	       (new-to-name (make-new-world-name (world-name (relation-to rel-m))
-						 (world-name (relation-to rel-a))))
-	       (from (find-if #'(lambda (n) 
-				  (string= (world-name n) new-from-name)) new-worlds))
-	       (to (find-if #'(lambda (n)
-				(string= (world-name n) new-to-name)) new-worlds)))
+	(let ((new-rel (make-new-relation rel-m rel-a new-worlds)))
 	  ;(format t "from: ~S~% to:~S ~%" from to)
-	  (when (and from to)
-	    ;(format t "NEW RELATION FOR AGENT ~S:~%FROM: ~S~%TO: ~S~%~%" ag from to)
-	    (setf new-relations-for-agent
-		  (append new-relations-for-agent 
-			  (list (make-relation :from from :to to))))))))
-    new-relations-for-agent))
+	  (when new-rel
+	    (push new-rel new-relations-for-agent)))))
+    (reverse new-relations-for-agent)))
 
 (defun make-new-relations (M A new-worlds)
   ;(format t "new-worlds: ~S~%" new-worlds)
