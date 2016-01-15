@@ -5,9 +5,7 @@
 (in-package #:del)
 
 (defun make-new-world-name (w e)
-  (concatenate 
-   'string 
-   "(" w ", " e ")"))
+  (concatenate 'string "(" w ", " e ")"))
 
 (defun find-world (name worlds)
   (find-if #'(lambda (n) (string= (world-name n) name)) worlds))
@@ -36,12 +34,10 @@
  
 (defun make-new-relations-for-agent (M A new-worlds ag)    
   ;(format t "A: ~S~%" A)
-  (let ((new-relations-for-agent '())
-	(relations-ag-m (find-relation-for-agent M ag))
-	(relations-ag-a (find-relation-for-agent A ag)))
+  (let ((new-relations-for-agent '()))
     ;(format t "rel-m: ~S~%rel-a: ~S~%" relations-ag-m relations-ag-a)
-    (dolist (rel-m relations-ag-m)
-      (dolist (rel-a relations-ag-a)
+    (dolist (rel-m (find-relation-for-agent M ag))
+      (dolist (rel-a (find-relation-for-agent A ag))
 	(let ((new-rel (make-new-relation rel-m rel-a new-worlds)))
 	  ;(format t "from: ~S~% to:~S ~%" from to)
 	  (when new-rel
@@ -50,9 +46,8 @@
 
 (defun make-new-relations (M A new-worlds)
   ;(format t "new-worlds: ~S~%" new-worlds)
-  (let* ((agents (kripke-model-agents M))
-	 (new-relations '()))
-    (dolist (ag agents)
+  (let ((new-relations '()))
+    (dolist (ag (kripke-model-agents M))
       ;(format t "new-relations: ~S~%" new-relations)
       (let ((new-relations-ag (make-new-relations-for-agent M A new-worlds ag)))
 	;(format t "new-relations-ag: ~S~%" new-relations-ag)
