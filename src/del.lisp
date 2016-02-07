@@ -4,6 +4,18 @@
 
 (in-package #:del)
 
+(defun positions (item sequence &key (test #'eql))
+  (mapcar #'car
+          (remove item (map 'list #'cons (alexandria:iota (length sequence)) sequence)
+		  :test-not test
+		  :key #'cdr)))
+
+(defun extract-names (w)
+  (let* ((pos (car (reverse (positions #\, (world-name w)))))
+	 (w-name (subseq (world-name w) 1 pos))
+	 (e-name (subseq (world-name w) (+ pos 2) (1- (length (world-name w))))))
+    (list w-name e-name)))
+
 (defun make-new-world-name (w e)
   (concatenate 'string "(" w ", " e ")"))
 
@@ -18,7 +30,8 @@
 	  ;(format t "add world: ~S~%" w)
 	  (push (make-world 
 		 :name (make-new-world-name (world-name w) (world-name e))
-		 :propositions (world-propositions w))
+		 :propositions 
+		 (append (world-propositions w) (world-substitutions e)))
 		new-worlds))))
     (reverse new-worlds)))
 
@@ -56,7 +69,18 @@
     new-relations))
 
 (defun make-new-real-worlds (M A new-worlds)
-  nil)
+  (let ((worlds '()))
+    (loop for nw in new-worlds do
+	 (let* ((tmp (extract-names nw))
+		(w-name (car tmp))
+		(e-name (cadr tmp))
+		(w (find-real-world-by-name M w-name))
+		(e (find-real-world-by-name A e-name)))
+	   (when (and w e)
+	     (push nw worlds))))
+    worlds))
+	    ;  (w-name ));
+	; )
 
 (defun update-possible-p (M A)
   (and 
@@ -72,6 +96,8 @@
 	     (new-relations (make-new-relations M A new-worlds))
 	     (new-real-worlds (make-new-real-worlds M A new-worlds)))
 	(make-kripke-model :worlds new-worlds
+			   :real-worlds new-real-worlds
+			   :comgraph (kripke-model-comgraph M)
 			   :relations new-relations
 			   :agents (kripke-model-agents M)))))
 

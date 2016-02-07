@@ -3,13 +3,17 @@
 	   #:make-world 
 	   #:world-name
 	   #:find-world-by-name
+	   #:find-real-world-by-name
 	   #:find-relation-for-agent
 	   #:kripke-model-worlds
 	   #:kripke-model-agents
 	   #:kripke-model-real-worlds
 	   #:kripke-model-relations
+	   #:kripke-model-comgraph
 	   #:world-propositions
+	   #:world-substitutions
 	   #:make-agent
+	   #:agent-name
 	   #:make-relation 
 	   #:relation-from
 	   #:relation-to
@@ -26,7 +30,8 @@
 
 (defstruct world
   name
-  propositions)
+  propositions
+  substitutions)
 
 (defstruct agent
   name)
@@ -37,13 +42,19 @@
 
 (defstruct kripke-model
   worlds 
+  vocabulary
   relations
+  comgraph
   agents
   real-worlds)
 
 (defun find-world-by-name (M name)
   (find-if #'(lambda (n) (string= (world-name n) name))
 	   (kripke-model-worlds M)))
+
+(defun find-real-world-by-name (M name)
+  (find-if #'(lambda (n) (string= (world-name n) name))
+	   (kripke-model-real-worlds M)))
 
 (defun find-agent-by-name (M name)
   (let ((up-name (string-upcase name)))
