@@ -1,5 +1,6 @@
 (defpackage #:message
   (:export #:make-message-action-model
+	   #:make-message-sent-model
 	   #:message-update
 	   #:message-sender
 	   #:message-receiver
@@ -51,8 +52,25 @@
 		       :agents (kripke-model-agents M)
 		       :real-worlds (list em e-not))))
 
+(defun make-message-sent-model (M message &key (positive t))
+  (let* ((e-sent (make-world :name "e-sent" :propositions (list message)))
+	 (e-not-sent (make-world :name "e-not-sent" :propositions (cons :NOT (list message))))
+	 (rel-all (map 'list #'(lambda (agent)
+				 (cons agent (list
+					      (make-relation :from e-sent :to e-sent)
+					      (make-relation :from e-not-sent :to e-not-sent)
+					      (make-relation :from e-sent :to e-not-sent)
+					      (make-relation :from e-not-sent :to e-sent))))
+		       (kripke-model-agents M))))
+    (make-kripke-model :worlds (list e-sent e-not-sent)
+		       :relations rel-all
+		       :agents (kripke-model-agents M)
+		       :real-worlds (list (if positive e-sent e-not-sent)))))
+	 
+	   
+  
+
 (defun message-update (M A)
   (product-update M A))
 
-(defun make-positive-message-update (M ))
 	  
