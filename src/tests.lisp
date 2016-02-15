@@ -1,5 +1,5 @@
 (defpackage #:tests
-  (:use #:cl #:kripke #:del #:message))
+  (:use #:cl #:kripke #:del #:message #:comgraph #:wsn))
 
 (in-package #:tests)
 
@@ -218,6 +218,43 @@
       )
     t
 ))
+
+(defun run-tests-5 ()
+  (let ((com (make-comgraph '(a b c))))
+    (add-undirected-edge com 'a 'b)
+    (add-undirected-edge com 'a 'c)
+    (let* ((device-a (make-agent :name "a"))
+	   (device-b (make-agent :name "b"))
+	   (device-c (make-agent :name "c"))
+	   (world-u (make-world :name "u" :propositions '(:EARTHQUAKE)))
+	   (world-v (make-world :name "v" :propositions '()))
+	   (rel-device-a
+	    (list (make-relation :from world-u :to world-u)
+		  (make-relation :from world-v :to world-v)))
+	   (rel-device-b
+	    (list (make-relation :from world-u :to world-u)
+		  (make-relation :from world-v :to world-v)
+		  (make-relation :from world-u :to world-v)
+		  (make-relation :from world-v :to world-u)))
+	   (rel-device-c
+	    (list (make-relation :from world-u :to world-u)
+		  (make-relation :from world-v :to world-v)
+		  (make-relation :from world-u :to world-v)
+		  (make-relation :from world-v :to world-u)))
+	   (M1 (make-kripke-model :worlds (list world-u world-v)
+				  :comgraph com
+				  :real-worlds (list world-u)
+				  :agents (list device-a device-b device-c)
+				  :relations (pairlis 
+					      (list device-a device-b device-c)
+					      (list rel-device-a rel-device-b rel-device-c)))))
+      (format t "~S~%" M1)
+      (assert (eq t (can-send-p M1 '(a :TRUE (a b c)))))
+      (assert (eq nil (can-send-p M1 '(b :TRUE (c)))))
+      )
+    )
+  t
+  )
 
 (defun run-tests ()
   (run-tests-1)

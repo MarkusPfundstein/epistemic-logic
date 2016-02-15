@@ -10,5 +10,7 @@
 	       (:file "src/kripke")
 	       (:file "src/del")
 	       (:file "src/message")
+	       (:file "src/comgraph")
+	       (:file "src/wsn")
 	       (:file "src/tests")))
 
