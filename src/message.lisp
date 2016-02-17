@@ -67,6 +67,7 @@
 		       :agents (kripke-model-agents M)
 		       :real-worlds (list (if positive e-sent e-not-sent)))))
 	 
+    
 (defun message-update (M message &key (positive t))
   (let ((M1 (product-update M (make-message-action-model M message))))
     (product-update M1 (make-message-sent-model M1 message :positive positive))))
