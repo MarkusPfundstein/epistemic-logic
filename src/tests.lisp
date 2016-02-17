@@ -213,7 +213,7 @@
 	(assert (eq t (models M3 "((u, e-not), e-not-sent)" '(:NOT (:KNOWS c (:KNOWS a :EARTHQUAKE))))))
 	(let ((M4 (message-update M '(a :EARTHQUAKE (a b)))))
 	  (assert (equal (format nil "~S" M3) (format nil "~S" M4)))
-	  (write-graphviz-dot-file M4 "~/run-tests-4.dot" :draw-reflexive nil)
+	  ;(write-graphviz-dot-file M4 "~/run-tests-4.dot" :draw-reflexive nil)
 	  )
 	)
       )
