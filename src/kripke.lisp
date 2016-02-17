@@ -14,6 +14,7 @@
 	   #:world-substitutions
 	   #:make-agent
 	   #:agent-name
+	   #:agent-p
 	   #:make-relation 
 	   #:relation-from
 	   #:relation-to

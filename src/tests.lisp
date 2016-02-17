@@ -248,9 +248,13 @@
 				  :relations (pairlis 
 					      (list device-a device-b device-c)
 					      (list rel-device-a rel-device-b rel-device-c)))))
-      (format t "~S~%" M1)
+;      (format t "~S~%" M1)
       (assert (eq t (can-send-p M1 '(a :TRUE (a b c)))))
       (assert (eq nil (can-send-p M1 '(b :TRUE (c)))))
+      (let* ((A-obs (make-observe-proposition-update M1 'a ':EARTHQUAKE-2))
+	     (M2 (product-update M1 A-obs)))
+	(format t "~S" M2))
+       
       )
     )
   t
