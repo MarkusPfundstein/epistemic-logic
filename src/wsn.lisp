@@ -2,7 +2,8 @@
   (:use #:cl #:kripke #:del #:message #:comgraph)
   (:export #:can-send-p
 	   #:make-observe-proposition-update
-	   #:wsn-message-update))
+	   #:wsn-message-update
+	   #:wsn-learn-prop))
 
 (in-package #:wsn)
 
@@ -44,6 +45,9 @@
 			 :relations rel-all
 			 :agents (kripke-model-agents M)
 			 :real-worlds (list e-obs)))))
+
+(defun wsn-learn-prop (M who prop)
+  (product-update M (make-observe-proposition-update M who prop)))
 
 (defun wsn-message-update (M msg)
   (if (can-send-p M msg)

@@ -261,6 +261,91 @@
   t
   )
 
+(defun test-make-change-state-update (M a G s1 s2 phi)
+  (let* ((e1 (make-world :name "e1" 
+			 :propositions (list ':AND s1 (list ':KNOWS a phi))
+			 :substitutions (list ':S1-to-S2)))
+	 (e2 (make-world :name "e2"
+			 :propositions (list ':AND s2 (list ':KNOWS a phi))
+			 :substitutions (list ':S2-to-S1)))
+	 (e3 (make-world :name "e3"
+			 :propositions (list ':NOT (list ':KNOWS a phi))))
+	 (ea (make-world :name "e-all" :propositions '(:TRUE)))
+	 (rel-all (map 'list #'(lambda (agent) 
+				 (cons agent 
+				       (append
+					 (list (make-relation :from e1 :to e1)
+					       (make-relation :from e2 :to e2)
+					       (make-relation :from e3 :to e3)
+					       (make-relation :from ea :to ea)
+					       (make-relation :from e1 :to e2)
+					       (make-relation :from e1 :to e3)
+					       (make-relation :from e2 :to e1)
+					       (make-relation :from e2 :to e3)
+					       (make-relation :from e3 :to e1)
+					       (make-relation :from e3 :to e2))
+					 (when (not (member agent G :test 'equal))
+					   (list
+					    (make-relation :from e1 :to ea)
+					    (make-relation :from e2 :to ea)
+					    (make-relation :from e3 :to ea)
+					    (make-relation :from ea :to e1)
+					    (make-relation :from ea :to e2)
+					    (make-relation :from ea :to e3))))))
+		       (kripke-model-agents M))))
+    (make-kripke-model :worlds (list e1 e2 e3 ea)
+		       :relations rel-all
+		       :agents (kripke-model-agents M)
+		       :real-worlds (list e1))))
+
+(defun run-tests-6 ()
+  (let ((com (make-comgraph '(a b c))))
+    (add-undirected-edge com 'a 'b)
+    (add-undirected-edge com 'a 'c)
+    (let* ((device-a (make-agent :name "a"))
+	   (device-b (make-agent :name "b"))
+	   (device-c (make-agent :name "c"))
+	   (world-u (make-world :name "u" :propositions '(:OPEN)))
+	   (world-v (make-world :name "v" :propositions '(:CLOSED)))
+	   (rel-device-a
+	    (list (make-relation :from world-u :to world-u)
+		  (make-relation :from world-v :to world-v)))
+	   (rel-device-b
+	    (list (make-relation :from world-u :to world-u)
+		  (make-relation :from world-v :to world-v)
+		  (make-relation :from world-u :to world-v)
+		  (make-relation :from world-v :to world-u)))
+	   (rel-device-c
+	    (list (make-relation :from world-u :to world-u)
+		  (make-relation :from world-v :to world-v)
+		  (make-relation :from world-u :to world-v)
+		  (make-relation :from world-v :to world-u)))
+	   (M1 (make-kripke-model :worlds (list world-u world-v)
+				  :comgraph com
+				  :real-worlds (list world-u)
+				  :agents (list device-a device-b device-c)
+				  :relations (pairlis 
+					      (list device-a device-b device-c)
+					      (list rel-device-a rel-device-b rel-device-c)))))
+      (format t "~S~%" M1)
+      (let ((M2 (wsn-learn-prop M1 'b ':PHI)))
+	(format t "~S~%" M2)
+	(write-graphviz-dot-file M2 "~/m2.dot")
+	(let ((M3 (wsn-message-update M2 '(b :PHI (a b)))))
+	  (write-graphviz-dot-file M3 "~/m3.dot")
+	  ;(setq MM M3)
+	  ;(setq da device-a)
+	  ;(setq db device-b)
+	  (format t "~S~%" M3)
+	  (let* ((test-update (test-make-change-state-update M3 
+							     'a 
+							     (list device-a device-b)
+							     ':OPEN ':CLOSED ':PHI))
+		 (M4 (product-update M3 test-update)))
+	    (format t "~S~%" M4)
+	    (write-graphviz-dot-file M4 "~/m4.dot")))))))
+
+
 (defun run-tests ()
   (run-tests-1)
   (format t "tests 1 done~%")
