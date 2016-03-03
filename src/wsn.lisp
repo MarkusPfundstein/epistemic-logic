@@ -29,7 +29,7 @@
       (error "agent not found"))
     (let* ((e-obs (make-world :name "e-obs" 
 			      :propositions '(:TRUE) 
-			      :substitutions (list prop)))
+			      :additions (list prop)))
 	   (e-not (make-world :name "e-not-obs"
 			      :propositions '(:TRUE)))
 	   (rel-all (map 'list #'(lambda (agent)

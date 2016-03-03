@@ -27,7 +27,7 @@
 (defun make-message-action-model (M message)
   (let* ((em (make-world 
 	      :name "em" 
-	      :substitutions (list message)
+	      :additions (list message)
 	      :propositions (list
 			     (cons :KNOWS 
 				   (list (message-sender message) 

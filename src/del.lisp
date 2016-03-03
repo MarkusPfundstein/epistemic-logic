@@ -26,27 +26,11 @@
   (and (consp l)
        (not (consp (cdr l)))))
 
-(defun update-propositions (props new-props)
-  (let ((result '()))
-    (dolist (el1 props)
-      (when (not (member el1 new-props :test #'(lambda (v1 v2)
-						 (typecase v2
-						   (keyword (eq v1 v2))
-						   (cons
-						    (if (dottedp v2)
-							(eq v1 (car v2))
-							(equal v1 v2)))
-						   (t (error "invalid type for prop"))))))
-	(push el1 result)))
-    (dolist (el2 new-props)
-      (typecase el2
-	(keyword (push el2 result))
-	(cons 
-	 (if (dottedp el2)
-	     (push (cdr el2) result)
-	     (push el2 result)))
-	(t (error "invalid type for prop2"))))
-    (reverse result)))
+(defun update-propositions (props add-props sub-props)
+  (union
+   (union (set-difference props (map 'list #'(lambda (e) (car e)) sub-props))
+	  add-props)
+   (map 'list #'(lambda (e) (cdr e)) sub-props)))
 
 (defun make-new-worlds (M A)
   (let ((new-worlds '()))
@@ -57,6 +41,7 @@
 	  (push (make-world 
 		 :name (make-new-world-name (world-name w) (world-name e))
 		 :propositions (update-propositions (world-propositions w)
+						    (world-additions e)
 						    (world-substitutions e)))
 		 ;(append (world-propositions w) (world-substitutions e)))
 		new-worlds))))

@@ -109,9 +109,9 @@
 				(make-relation :from event-d :to event-e)
 				(make-relation :from event-e :to event-d)))
 	   (Ax (make-kripke-model :worlds (list event-d event-e)
-				 :real-worlds (list event-d event-e)
-				 :agents (kripke-model-agents M)
-				 :relations (pairlis 
+				  :real-worlds (list event-d event-e)
+				  :agents (kripke-model-agents M)
+				  :relations (pairlis 
 					     (list device-a device-b device-c)
 					     (list rel-event-device-a
 						   rel-event-device-b

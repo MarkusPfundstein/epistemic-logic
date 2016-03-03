@@ -11,6 +11,7 @@
 	   #:kripke-model-relations
 	   #:kripke-model-comgraph
 	   #:world-propositions
+	   #:world-additions
 	   #:world-substitutions
 	   #:make-agent
 	   #:agent-name
@@ -32,6 +33,7 @@
 (defstruct world
   name
   propositions
+  additions
   substitutions)
 
 (defstruct agent
