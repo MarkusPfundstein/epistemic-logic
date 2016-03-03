@@ -35,17 +35,14 @@
 	 (e-not (make-world
 		 :name "e-not"
 		 :propositions '(:TRUE)))
-	 ; kinda hacky stuff here. create relations that hold for all agents but....
-	 (rel-all (map 'list #'(lambda (agent) 
-				 (cons agent 
-				       (append 
-					(list (make-relation :from em :to em)
-					      (make-relation :from e-not :to e-not))
-					; append A\G relation only when agent is recipient
-					; cool thing here is that append doesnt append nil
-					(when (not (is-recipient agent message))
-					  (list (make-relation :from em :to e-not)
-						(make-relation :from e-not :to em))))))
+	 (rel-all (mapcar #'(lambda (agent) 
+			      (cons agent 
+				    (append 
+				     (list (make-relation :from em :to em)
+					   (make-relation :from e-not :to e-not))
+				     (when (not (is-recipient agent message))
+				       (list (make-relation :from em :to e-not)
+					     (make-relation :from e-not :to em))))))
 		       (kripke-model-agents M))))
     (make-kripke-model :worlds (list em e-not)
 		       :relations rel-all
@@ -55,13 +52,13 @@
 (defun make-message-sent-model (M message &key (positive t))
   (let* ((e-sent (make-world :name "e-sent" :propositions (list message)))
 	 (e-not-sent (make-world :name "e-not-sent" :propositions (cons :NOT (list message))))
-	 (rel-all (map 'list #'(lambda (agent)
-				 (cons agent (list
-					      (make-relation :from e-sent :to e-sent)
-					      (make-relation :from e-not-sent :to e-not-sent)
-					      (make-relation :from e-sent :to e-not-sent)
-					      (make-relation :from e-not-sent :to e-sent))))
-		       (kripke-model-agents M))))
+	 (rel-all (mapcar #'(lambda (agent)
+			      (cons agent (list
+					   (make-relation :from e-sent :to e-sent)
+					   (make-relation :from e-not-sent :to e-not-sent)
+					   (make-relation :from e-sent :to e-not-sent)
+					   (make-relation :from e-not-sent :to e-sent))))
+			  (kripke-model-agents M))))
     (make-kripke-model :worlds (list e-sent e-not-sent)
 		       :relations rel-all
 		       :agents (kripke-model-agents M)

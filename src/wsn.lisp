@@ -32,15 +32,15 @@
 			      :additions (list prop)))
 	   (e-not (make-world :name "e-not-obs"
 			      :propositions '(:TRUE)))
-	   (rel-all (map 'list #'(lambda (agent)
-				   (cons agent 
-					 (append 
-					  (list (make-relation :from e-obs :to e-obs)
-						(make-relation :from e-not :to e-not))
-					  (when (not (eq observing-agent agent))
-					    (list (make-relation :from e-obs :to e-not)
-						  (make-relation :from e-not :to e-obs))))))
-			 (kripke-model-agents M))))
+	   (rel-all (mapcar #'(lambda (agent)
+				(cons agent 
+				      (append 
+				       (list (make-relation :from e-obs :to e-obs)
+					     (make-relation :from e-not :to e-not))
+				       (when (not (eq observing-agent agent))
+					 (list (make-relation :from e-obs :to e-not)
+					       (make-relation :from e-not :to e-obs))))))
+			    (kripke-model-agents M))))
       (make-kripke-model :worlds (list e-obs e-not)
 			 :relations rel-all
 			 :agents (kripke-model-agents M)

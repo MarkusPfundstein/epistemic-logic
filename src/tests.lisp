@@ -1,5 +1,5 @@
 (defpackage #:tests
-  (:use #:cl #:kripke #:del #:message #:comgraph #:wsn #:drawing))
+  (:use #:cl #:iterate #:func #:kripke #:del #:message #:comgraph #:wsn #:drawing))
 
 (in-package #:tests)
 
@@ -264,14 +264,14 @@
 (defun test-make-change-state-update (M a G s1 s2 phi)
   (let* ((e1 (make-world :name "e1" 
 			 :propositions (list ':AND s1 (list ':KNOWS a phi))
-			 :substitutions (list ':S1-to-S2)))
+			 :additions (list ':S1-to-S2)))
 	 (e2 (make-world :name "e2"
 			 :propositions (list ':AND s2 (list ':KNOWS a phi))
-			 :substitutions (list ':S2-to-S1)))
+			 :additions (list ':S2-to-S1)))
 	 (e3 (make-world :name "e3"
 			 :propositions (list ':NOT (list ':KNOWS a phi))))
 	 (ea (make-world :name "e-all" :propositions '(:TRUE)))
-	 (rel-all (map 'list #'(lambda (agent) 
+	 (rel-all (mapcar #'(lambda (agent) 
 				 (cons agent 
 				       (append
 					 (list (make-relation :from e1 :to e1)
