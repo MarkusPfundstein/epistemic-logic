@@ -1,6 +1,6 @@
 (defpackage #:sim
   (:use #:cl #:iterate #:alexandria #:func #:kripke #:del #:message #:comgraph #:wsn #:drawing)
-  (:export #:run-test-sim))≈
+  (:export #:run-test-sim))
 
 (in-package #:sim)
 
