@@ -66,6 +66,15 @@
 	      (pairlis (list ag) (list new-relations-ag) new-relations))))
     new-relations))
 
+(defun make-new-time-relations (M A new-worlds)
+  (iter (for nw in new-worlds)
+	(when-let* ((tmp (extract-names nw))
+		    (w (find-world-by-name M (car tmp)))
+		    (e (find-world-by-name A (cadr tmp))))
+	  (format t "link ~S to ~S by ~S~%"
+		  (world-name nw) (world-name w) (world-name e))
+	  (collect (cons nw w)))))
+
 (defun make-new-real-worlds (M A new-worlds)
   (iter (for nw in new-worlds)
 	(when-let* ((tmp (extract-names nw))
@@ -83,9 +92,12 @@
       (error "Set of agents of M and A differ")
       (let* ((new-worlds (make-new-worlds M A))
 	     (new-relations (make-new-relations M A new-worlds))
-	     (new-real-worlds (make-new-real-worlds M A new-worlds)))
+	     (new-real-worlds (make-new-real-worlds M A new-worlds))
+	     (new-time-relations (make-new-time-relations M A new-worlds)))
 	(make-kripke-model :worlds new-worlds
+			   :previous-model M
 			   :real-worlds new-real-worlds
+			   :time-relations new-time-relations
 			   :comgraph (kripke-model-comgraph M)
 			   :relations new-relations
 			   :agents (kripke-model-agents M)))))

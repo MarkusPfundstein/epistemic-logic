@@ -5,11 +5,14 @@
 	   #:find-world-by-name
 	   #:find-real-world-by-name
 	   #:find-relation-for-agent
+	   #:find-previous-world
 	   #:kripke-model-worlds
 	   #:kripke-model-agents
 	   #:kripke-model-real-worlds
 	   #:kripke-model-relations
 	   #:kripke-model-comgraph
+	   #:kripke-model-time-relations
+	   #:kripke-model-previous-model
 	   #:world-propositions
 	   #:world-additions
 	   #:world-substitutions
@@ -21,7 +24,7 @@
 	   #:relation-from
 	   #:relation-to
 	   #:make-kripke-model)
-  (:use #:cl))
+  (:use #:cl #:func))
 
 (in-package #:kripke)
 
@@ -51,6 +54,8 @@
   worlds 
   vocabulary
   relations
+  time-relations
+  previous-model
   comgraph
   agents
   real-worlds)
@@ -69,6 +74,10 @@
 			    (string-upcase (agent-name n)) up-name))
 	     (kripke-model-agents M))))
 
+(defun find-previous-worlds (M w)
+  (mapcar #'cdr (find-all-if #'(lambda (w-rel) (equal w (car w-rel)))
+			     (kripke-model-time-relations M))))
+
 (defun find-relation-for-agent (M a)
   (cdr (find-if #'(lambda (x) 
 		    (eq (agent-name (car x)) (agent-name a))) 
@@ -86,7 +95,16 @@
       (error "error finding agent in function possible"))
     (not (null (find-if #'(lambda (r) (models M (relation-to r) form))
 			(find-relation-for-agent-and-world M a w))))))
-	       
+
+(defun yesterday-models (M w form)
+  ;(format t "~S~%" form)
+  ;(format t "~S~%" (find-previous-worlds M w))
+  (not (null (find-if #'(lambda (pw)
+			  (models (kripke-model-previous-model M) pw form))
+		      (find-previous-worlds M w)))))
+
+;(defun observe-func (M w 
+
 (defun models-list (M w form)
   (let ((op (car form))
 	(rest-form (cdr form)))
@@ -106,6 +124,10 @@
        (possible M w (car rest-form) (cadr rest-form)))
       (:KNOWS
        (not (possible M w (car rest-form) (list :NOT (cadr rest-form)))))
+      (:YESTERDAY
+       (yesterday-models M w (car rest-form)))
+;      (:OBSERVE
+;       (observe-func M w (car rest-form)))
       (:TRUE
        t)
       (t

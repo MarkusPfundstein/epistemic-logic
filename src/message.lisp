@@ -24,7 +24,7 @@
     (not (null (member (string-upcase (agent-name agent)) names :test #'string=)))))
 
 ; (message sender-name formula (receiver_1, ..., receiver_n))
-(defun make-message-action-model (M message)
+(defun make-message-action-model (M message &key (positive t))
   (let* ((em (make-world 
 	      :name "em" 
 	      :additions (list message)
@@ -47,7 +47,7 @@
     (make-kripke-model :worlds (list em e-not)
 		       :relations rel-all
 		       :agents (kripke-model-agents M)
-		       :real-worlds (list em e-not))))
+		       :real-worlds (list (if positive em e-not)))))
 
 (defun make-message-sent-model (M message &key (positive t))
   (let* ((e-sent (make-world :name "e-sent" :propositions (list message)))
@@ -64,9 +64,10 @@
 		       :agents (kripke-model-agents M)
 		       :real-worlds (list (if positive e-sent e-not-sent)))))
 	 
-    
+
 (defun message-update (M message &key (positive t))
-  (let ((M1 (product-update M (make-message-action-model M message))))
-    (product-update M1 (make-message-sent-model M1 message :positive positive))))
+  (product-update M (make-message-action-model M message :positive positive)))
+;  (let ((M1 (product-update M (make-message-action-model M message))))
+;    (product-update M1 (make-message-sent-model M1 message :positive positive))))
 
 	  

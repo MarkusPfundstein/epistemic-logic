@@ -162,10 +162,22 @@
 					   (list rel-device-a rel-device-b rel-device-c)))))
     (let* ((Am (make-message-action-model M '(a :EARTHQUAKE (a b))))
 	   (M2 (product-update M Am)))
-      ;(format t "~S~%" M2)
+      (format t "~S~%" M2)
       ; a and b know now :EARTHQUAKE in (u, em)
       (assert (eq t (models M2 "(u, em)" '(:AND (:KNOWS b :EARTHQUAKE) (:KNOWS a :EARTHQUAKE)))))
-      ; a and b know that message was sent
+      ; b didn't know :EARTHQUAKE yesterday in (u, em)
+      (assert (eq t
+		  (models M2 "(u, em)"
+			  '(:YESTERDAY (:NOT (:KNOWS b :EARTHQUAKE))))))
+      ; a did know :EARTHQUAKE yesterday
+      (assert (eq t
+		  (models M2 "(u, em)"
+			  '(:YESTERDAY (:KNOWS a :EARTHQUAKE)))))
+      ; a and b didnt know message yesterday
+      (assert (eq t
+		  (models M2 "(u, em)"
+			  '(:NOT (:YESTERDAY (:KNOWS a (a :EARTHQUAKE a b)))))))
+      ; but a and b know that message was sent
       (assert (eq t (models M2 "(u, em)" '(:AND (:KNOWS b (a :EARTHQUAKE (a b)))
 					        (:KNOWS a (a :EARTHQUAKE (a b)))))))
       ; c doesn't know about message
@@ -184,38 +196,6 @@
       (assert (eq t (models M2 "(u, e-not)" '(:KNOWS a (:AND (:NOT (:KNOWS b :EARTHQUAKE))
 					      (:NOT (:KNOWS c :EARTHQUAKE)))))))
       (assert (eq t (models M2 "(u, e-not)" '(:NOT (:KNOWS c (:KNOWS a :EARTHQUAKE))))))
-      (let* ((Ap (make-message-sent-model M2 '(a :EARTHQUAKE (a b))))
-	     (M3 (product-update M2 Ap)))
-	;(format t "~S~%" M3)
-	(assert (eq 1 (length (kripke-model-real-worlds M3))))
-	(assert (eq t (= (length (kripke-model-worlds M2)) (length (kripke-model-worlds M3)))))
-	(assert (eq t (= (length (kripke-model-relations M2)) (length (kripke-model-relations M3)))))
-	(assert (eq t (models M3 "((u, em), e-sent)" 
-			      '(:AND (:KNOWS b :EARTHQUAKE) (:KNOWS a :EARTHQUAKE)))))
-					; a and b know that message was sent
-	(assert (eq t (models M3 "((u, em), e-sent)" '(:AND (:KNOWS b (a :EARTHQUAKE (a b)))
-					     (:KNOWS a (a :EARTHQUAKE (a b)))))))
-					; c doesn't know about message
-	(assert (eq t (models M3 "((u, em), e-sent)" '(:NOT :KNOWS c (a :EARTHQUAKE (a b))))))
-					; a and b dont know about message in worlds where it was not sent
-	(assert (eq t (models M3 "((u, e-not), e-not-sent)" '(:NOT :KNOWS a (a :EARTHQUAKE (a b))))))
-	(assert (eq t (models M3 "((u, e-not), e-not-sent)" '(:NOT :KNOWS b (a :EARTHQUAKE (a b))))))
-	(assert (eq t (models M3 "((v, e-not), e-not-sent)" '(:NOT :KNOWS a (a :EARTHQUAKE (a b))))))
-	(assert (eq t (models M3 "((v, e-not), e-not-sent)" '(:NOT :KNOWS b (a :EARTHQUAKE (a b))))))
-					; c doesnt know :EARTHQUAKE in (u, em)
-	(assert (eq t (models M3 "((u, em), e-sent)" '(:NOT :KNOWS c :EARTHQUAKE))))
-					; in e-not model, everything stays the same (like in tests 3)
-	(assert (eq t (models M3 "((u, e-not), e-not-sent)" '(:KNOWS a :EARTHQUAKE))))
-	(assert (eq t (models M3 "((u, e-not), e-not-sent)" '(:POSSIBLE b (:NOT :EARTHQUAKE)))))
-	(assert (eq t (models M3 "((v, e-not), e-not-sent)" '(:NOT :KNOWS c (:NOT :EARTHQUAKE)))))
-	(assert (eq t (models M3 "((u, e-not), e-not-sent)" '(:KNOWS a (:AND (:NOT (:KNOWS b :EARTHQUAKE))
-							  (:NOT (:KNOWS c :EARTHQUAKE)))))))
-	(assert (eq t (models M3 "((u, e-not), e-not-sent)" '(:NOT (:KNOWS c (:KNOWS a :EARTHQUAKE))))))
-	(let ((M4 (message-update M '(a :EARTHQUAKE (a b)))))
-	  (assert (equal (format nil "~S" M3) (format nil "~S" M4)))
-	  ;(write-graphviz-dot-file M4 "~/run-tests-4.dot" :draw-reflexive nil)
-	  )
-	)
       )
     t
 ))
