@@ -13,6 +13,7 @@
 	   #:world-propositions
 	   #:world-additions
 	   #:world-substitutions
+	   #:world-preconditions
 	   #:make-agent
 	   #:agent-name
 	   #:agent-p
@@ -35,6 +36,9 @@
   propositions
   additions
   substitutions)
+
+(defmacro world-preconditions (w)
+  `(world-propositions ,w))
 
 (defstruct agent
   name)
@@ -61,7 +65,6 @@
 
 (defun find-agent-by-name (M name)
   (let ((up-name (string-upcase name)))
-    ;(format t "~S~%" up-name)
     (find-if #'(lambda (n) (string= 
 			    (string-upcase (agent-name n)) up-name))
 	     (kripke-model-agents M))))
@@ -78,20 +81,15 @@
   (not (null (member2 p (world-propositions w)))))
 
 (defun possible (M w a-name form)
-  ;(format t "a-name: ~S~%" a-name)
   (let ((a (find-agent-by-name M (string a-name))))
     (when (not a)
       (error "error finding agent in function possible"))
-    ;(format t "agent: ~S~%" a)
     (not (null (find-if #'(lambda (r) (models M (relation-to r) form))
 			(find-relation-for-agent-and-world M a w))))))
 	       
 (defun models-list (M w form)
-  ;(format t "models-list: ~S~%" form)
   (let ((op (car form))
 	(rest-form (cdr form)))
-    ;(format t "op: ~S~%" op)
-    ;(format t "rest-form: ~S~%" rest-form)
     (case op
       (:NOT
        (not (models M w rest-form)))
@@ -110,12 +108,10 @@
        (not (possible M w (car rest-form) (list :NOT (cadr rest-form)))))
       (:TRUE
        t)
-      (t 
-       ;(format t "fall-trough t~%")
+      (t
        (models M w op)))))
 
 (defun models (M w form)
-  ;(format t "MODELS: ~S~%" form)
   (if (stringp w)
       (models M (find-world-by-name M w) form)
       (if (val w form) 

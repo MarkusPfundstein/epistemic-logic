@@ -31,7 +31,7 @@
 
 (defun make-new-worlds (M A)
   (iter-cartesian2 ((w e) (kripke-model-worlds M) (kripke-model-worlds A))
-      (when (models M w (world-propositions e))
+      (when (models M w (world-preconditions e))
 	(collect (make-world :name (make-new-world-name (world-name w)
 							(world-name e))
 			     :propositions (update-val
