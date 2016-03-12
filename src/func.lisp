@@ -1,6 +1,9 @@
 (defpackage #:func
   (:use #:cl #:iterate)
   (:export
+   #:contains-nil
+   #:find-nil
+   #:find-true
    #:find-all
    #:find-all-if
    #:cartesian2
@@ -8,7 +11,21 @@
 
 (in-package #:func)
 
-(defun find-all (item seq &rest keyword-args &key (test #'eql) test-not &allow-other-keys)
+(defmacro find-nil (seq)
+  `(contains-nil ,seq))
+
+(defun find-true (seq)
+  (iter (for s in seq)
+	 (when s (return-from find-true t))))
+	  
+
+(defun contains-nil (seq)
+  (iter (for s in seq)
+	(when (null s)
+	  (return-from contains-nil t))))
+
+(defun find-all (item seq &rest keyword-args
+		 &key (test #'eql) test-not &allow-other-keys)
   (if test-not
       (apply #'remove item seq
 	     :test-not (complement test-not) keyword-args)

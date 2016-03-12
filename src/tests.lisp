@@ -177,6 +177,26 @@
       (assert (eq t
 		  (models M2 "(u, em)"
 			  '(:NOT (:YESTERDAY (:KNOWS a (a :EARTHQUAKE a b)))))))
+      ; b has observed :EARTHQUAKE in "(u, em)"
+      (assert (eq t
+		  (models M2 "(u, em)"
+			  '(:OBSERVE b :EARTHQUAKE))))
+      ; b hasn't observed EARTHQUAKE in "(u, e-not)"
+      (assert (eq t
+		  (models M2 "(u, e-not)"
+			  '(:NOT (:OBSERVE b :EARTHQUAKE)))))
+      ; a and c both haven't observed EARTHQUAKE in "(u, em)"
+      (assert (eq t
+		  (models M2 "(u, em)"
+			  '(:AND
+			    (:NOT (:OBSERVE a :EARTHQUAKE))
+			    (:NOT (:OBSERVE c :EARTHQUAKE))))))
+      ; a and b both have observed message
+      (assert (eq t
+		  (models M2 "(u, em)"
+			  '(:AND
+			    (:OBSERVE a (a :EARTHQUAKE (a b)))
+			    (:OBSERVE b (a :EARTHQUAKE (a b)))))))
       ; but a and b know that message was sent
       (assert (eq t (models M2 "(u, em)" '(:AND (:KNOWS b (a :EARTHQUAKE (a b)))
 					        (:KNOWS a (a :EARTHQUAKE (a b)))))))
@@ -229,7 +249,6 @@
 				  :relations (pairlis 
 					      (list device-a device-b device-c)
 					      (list rel-device-a rel-device-b rel-device-c)))))
-;      (format t "~S~%" M1)
       (assert (eq t (can-send-p M1 '(a :TRUE (a b c)))))
       (assert (eq nil (can-send-p M1 '(b :TRUE (c)))))
       (let* ((A-obs (make-observe-proposition-update M1 'a ':EARTHQUAKE-2))

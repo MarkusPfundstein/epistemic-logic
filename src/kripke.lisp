@@ -1,5 +1,8 @@
 (defpackage #:kripke
-  (:export #:models 
+  (:export #:models
+	   #:models-some
+	   #:models-all
+	   #:unify-formula
 	   #:make-world 
 	   #:world-name
 	   #:find-world-by-name
@@ -24,7 +27,7 @@
 	   #:relation-from
 	   #:relation-to
 	   #:make-kripke-model)
-  (:use #:cl #:func))
+  (:use #:cl #:alexandria #:iterate #:func))
 
 (in-package #:kripke)
 
@@ -86,6 +89,16 @@
 (defun find-relation-for-agent-and-world (M a w)
   (remove-if-not #'(lambda (v) (eq (relation-from v) w)) (find-relation-for-agent M a)))
 
+(defun unify-formula (formula map)
+  ;(format t "unify ~S~%" formula)
+  ;(format t "with ~S~%" map)
+  (if (listp formula)
+      (iter (for sf in formula)
+	    (collect (unify-formula sf map)))
+      (if (string= "?" formula :start2 0 :end2 1)
+	  (cdr (find-if #'(lambda (s) (equal (car s) formula)) map))
+	  formula)))
+
 (defun val (w p)
   (not (null (member2 p (world-propositions w)))))
 
@@ -103,7 +116,13 @@
 			  (models (kripke-model-previous-model M) pw form))
 		      (find-previous-worlds M w)))))
 
-;(defun observe-func (M w 
+(defun observe-func (M w a-name form)
+  ;(format t "test observe (agent ~S) ~S~%" a-name form)
+  (let ((formula (unify-formula
+		  '(:AND (:KNOWS ?ag ?phi) (:YESTERDAY (:NOT (:KNOWS ?ag ?phi))))
+		  (pairlis '(?ag ?phi) (list a-name form)))))
+    ;(format t "formula ~S~%" formula)
+    (models M w formula)))
 
 (defun models-list (M w form)
   (let ((op (car form))
@@ -126,12 +145,22 @@
        (not (possible M w (car rest-form) (list :NOT (cadr rest-form)))))
       (:YESTERDAY
        (yesterday-models M w (car rest-form)))
-;      (:OBSERVE
-;       (observe-func M w (car rest-form)))
+      (:OBSERVE
+       (observe-func M w (car rest-form) (cadr rest-form)))
       (:TRUE
        t)
       (t
        (models M w op)))))
+
+; returns true if form is true in at least one world in M
+(defun models-some (M form)
+  (find-true (mapcar #'(lambda (w) (models M (world-name w) form))
+		     (kripke-model-worlds M))))
+
+; returns true if form is true in all worlds
+(defun models-all (M form)
+  (not (find-nil (mapcar #'(lambda (w) (models M (world-name w) form))
+			 (kripke-model-worlds M)))))
 
 (defun models (M w form)
   (if (stringp w)
