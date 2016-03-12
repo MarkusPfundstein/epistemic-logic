@@ -52,4 +52,4 @@
 (defun wsn-message-update (M msg)
   (if (can-send-p M msg)
       (message-update M msg :positive t)
-      M))
+      (error "message recipients not reachable by comgraph")))

@@ -1,6 +1,5 @@
 (defpackage #:message
   (:export #:make-message-action-model
-	   #:make-message-sent-model
 	   #:message-update
 	   #:message-sender
 	   #:message-receiver
@@ -28,10 +27,11 @@
   (let* ((em (make-world 
 	      :name "em" 
 	      :additions (list message)
-	      :propositions (list
-			     (cons :KNOWS 
-				   (list (message-sender message) 
-					 (message-content message))))))
+	      :propositions (unify-formula 
+			     '(:KNOWS ?ag ?content)
+			     (pairlis '(?ag ?content) 
+				      (list (message-sender message)
+					    (message-content message))))))
 	 (e-not (make-world
 		 :name "e-not"
 		 :propositions '(:TRUE)))
@@ -49,25 +49,7 @@
 		       :agents (kripke-model-agents M)
 		       :real-worlds (list (if positive em e-not)))))
 
-(defun make-message-sent-model (M message &key (positive t))
-  (let* ((e-sent (make-world :name "e-sent" :propositions (list message)))
-	 (e-not-sent (make-world :name "e-not-sent" :propositions (cons :NOT (list message))))
-	 (rel-all (mapcar #'(lambda (agent)
-			      (cons agent (list
-					   (make-relation :from e-sent :to e-sent)
-					   (make-relation :from e-not-sent :to e-not-sent)
-					   (make-relation :from e-sent :to e-not-sent)
-					   (make-relation :from e-not-sent :to e-sent))))
-			  (kripke-model-agents M))))
-    (make-kripke-model :worlds (list e-sent e-not-sent)
-		       :relations rel-all
-		       :agents (kripke-model-agents M)
-		       :real-worlds (list (if positive e-sent e-not-sent)))))
-	 
-
 (defun message-update (M message &key (positive t))
   (product-update M (make-message-action-model M message :positive positive)))
-;  (let ((M1 (product-update M (make-message-action-model M message))))
-;    (product-update M1 (make-message-sent-model M1 message :positive positive))))
 
 	  

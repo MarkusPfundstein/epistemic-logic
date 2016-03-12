@@ -181,6 +181,9 @@
       (assert (eq t
 		  (models M2 "(u, em)"
 			  '(:OBSERVE b :EARTHQUAKE))))
+      (assert (eq t
+		  (models M2 "(u, em)"
+			  '(:KNOWS b (:OBSERVE b :EARTHQUAKE)))))
       ; b hasn't observed EARTHQUAKE in "(u, e-not)"
       (assert (eq t
 		  (models M2 "(u, e-not)"
