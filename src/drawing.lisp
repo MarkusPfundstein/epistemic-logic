@@ -1,7 +1,8 @@
 (defpackage #:drawing
   (:use #:cl #:kripke)
   (:export #:generate-graphviz-dot-file-string
-	   #:write-graphviz-dot-file))
+	   #:write-graphviz-dot-file
+	   #:write-graphviz-png-file))
 
 (in-package #:drawing)
 
@@ -55,3 +56,13 @@
 			    :if-exists :supersede
 			    :if-does-not-exist :create)
       (format stream "~a" content))))
+
+(defun write-graphviz-png-file (M dest 
+				&key 
+				  (draw-reflexive nil) (keep-dot-file nil)
+				  (dot-file-path "/usr/local/bin/dot"))
+  (write-graphviz-dot-file M dest :draw-reflexive draw-reflexive)
+  (sb-ext:run-program dot-file-path (list "-Tpng" "-O" dest) :output *standard-output*)
+  (when (not keep-dot-file)
+    (with-open-file (f dest)
+      (delete-file f))))

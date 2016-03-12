@@ -9,6 +9,9 @@
 	   #:find-real-world-by-name
 	   #:find-relation-for-agent
 	   #:find-previous-world
+	   #:make-protocol
+	   #:protocol-precondition-fn
+	   #:protocol-action-fn
 	   #:kripke-model-worlds
 	   #:kripke-model-agents
 	   #:kripke-model-real-worlds
@@ -23,6 +26,7 @@
 	   #:make-agent
 	   #:agent-name
 	   #:agent-p
+	   #:agent-protocols
 	   #:make-relation 
 	   #:relation-from
 	   #:relation-to
@@ -46,8 +50,14 @@
 (defmacro world-preconditions (w)
   `(world-propositions ,w))
 
+(defstruct protocol
+  precondition-fn
+  action-fn)
+
 (defstruct agent
-  name)
+  name
+  states
+  protocols)
 
 (defstruct relation
   from

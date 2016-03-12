@@ -14,5 +14,6 @@
 	       (:file "src/comgraph")
 	       (:file "src/wsn")
 	       (:file "src/drawing")
+	       (:file "src/sim")
 	       (:file "src/tests")))
 
