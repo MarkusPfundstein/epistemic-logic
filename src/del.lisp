@@ -71,16 +71,20 @@
 	(when-let* ((tmp (extract-names nw))
 		    (w (find-world-by-name M (car tmp)))
 		    (e (find-world-by-name A (cadr tmp))))
-	  (format t "link ~S to ~S by ~S~%"
-		  (world-name nw) (world-name w) (world-name e))
+	  ;(format t "link ~S to ~S by ~S~%"
+		;  (world-name nw) (world-name w) (world-name e))
 	  (collect (cons nw w)))))
 
 (defun make-new-real-worlds (M A new-worlds)
   (iter (for nw in new-worlds)
+	;(format t "nw: ~S~%" (world-name nw))
 	(when-let* ((tmp (extract-names nw))
 		    (w (find-real-world-by-name M (car tmp)))
 		    (e (find-real-world-by-name A (cadr tmp))))
 	  (collect nw))))
+	  ;(if (and w e)
+	      ;(collect nw)
+	      ;(format t "tmp: ~S - w: ~S e: ~S~%~%" tmp (if w (world-name w) nil) (if e (world-name e) nil))))))
 
 (defun update-possible-p (M A)
   (and 
@@ -88,6 +92,9 @@
        (length (kripke-model-agents A)))))
        
 (defun product-update (M A)
+  ;(format t "real worlds:~%M:~S~%A:~S~%" 
+	;  (mapcar #'(lambda (rw) (world-name rw)) (kripke-model-real-worlds M))
+	 ; (mapcar #'(lambda (rw) (world-name rw)) (kripke-model-real-worlds A)))
   (if (not (update-possible-p M A))
       (error "Set of agents of M and A differ")
       (let* ((new-worlds (make-new-worlds M A))

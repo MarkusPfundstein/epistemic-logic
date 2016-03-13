@@ -26,6 +26,9 @@
 	   #:make-agent
 	   #:agent-name
 	   #:agent-p
+	   #:relation-p
+	   #:kripke-model-p
+	   #:protocol-p
 	   #:agent-protocols
 	   #:make-relation 
 	   #:relation-from

@@ -15,5 +15,6 @@
 	       (:file "src/wsn")
 	       (:file "src/drawing")
 	       (:file "src/sim")
-	       (:file "src/tests")))
-
+	       (:file "src/tests")
+	       (:file "experiments/invalid-semantics")
+	       (:file "experiments/state-change-before-message")))

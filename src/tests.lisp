@@ -362,70 +362,7 @@
   t
 )
 
-(defparameter t-world-w (make-world :name "w"
-				    :propositions '(:OPEN)))
 
-(defparameter t-proto-b (make-protocol
-			 :precondition-fn (lambda (M ts) 
-					    (let ((f (unify-formula '(:OBSERVE b (:PUSH ?TIME))
-							    (pairlis '(?TIME)
-								     (list ts)))))
-					      (format t "call precondition for b: ~S~%" f)
-					      (models-some M f)))
-			 :action-fn (lambda (M ts) 
-				      (let ((f (unify-formula '(b (:PUSH ?TIME) (a b))
-								   (pairlis '(?TIME)
-									    (list ts)))))
-					(format t "call action for b: ~S~%" f)
-					(make-message-action-model M f)))))
-						    
-
-(defparameter t-agent-a (make-agent :name "a"))
-(defparameter t-agent-b (make-agent :name "b" 
-				    :protocols (list t-proto-b)))
-(defparameter t-agent-c (make-agent :name "c"))
-
-(defparameter t-comgraph (make-comgraph '(a b c)))
-; b <-> a <-> c
-(add-undirected-edge t-comgraph 'a 'b)
-(add-undirected-edge t-comgraph 'a 'c)
-
-(defparameter t-rel-a (list
-		       (make-relation :from t-world-w :to t-world-w)))
-(defparameter t-rel-b (list
-		       (make-relation :from t-world-w :to t-world-w)))
-(defparameter t-rel-c (list
-		       (make-relation :from t-world-w :to t-world-w)))
-
-(defparameter M-init (make-kripke-model
-		      :worlds (list t-world-w)
-		      :relations (pairlis (list t-agent-a
-						t-agent-b
-						t-agent-c)
-					  (list t-rel-a
-						t-rel-b
-						t-rel-c))
-		      :comgraph t-comgraph
-		      :agents (list t-agent-a t-agent-b t-agent-c)
-		      :real-worlds (list t-world-w)))
-
-(assert (eq t (models M-init "w" '(:AND
-				   (:KNOWS a :OPEN)
-				   (:KNOWS b :OPEN)
-				   (:KNOWS c :OPEN)))))
-
-
-(defparameter test-events (list 
-			   (cons "b learns :PUSH" (lambda (M ts) 
-						    (let ((f (unify-formula '(:PUSH ?TIME)
-									    (pairlis '(?TIME)
-										     (list ts)))))
-						      (format t "event learn prop at ts ~S - ~S~%" ts f)
-						      (wsn-learn-prop M 'b f))))))
-					     
-
-
-	  
 
 
 		         

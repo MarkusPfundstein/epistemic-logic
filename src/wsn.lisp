@@ -2,6 +2,7 @@
   (:use #:cl #:kripke #:del #:message #:comgraph)
   (:export #:can-send-p
 	   #:make-observe-proposition-update
+	   #:make-state-change-update
 	   #:wsn-message-update
 	   #:wsn-learn-prop))
 
@@ -22,6 +23,7 @@
 	   agents))
 
 (defun make-observe-proposition-update (M observer prop)
+  ; To-DO: should work for multiple agents
   (let ((observing-agent (if (agent-p observer) 
 			     observer 
 			     (find-agent observer (kripke-model-agents M)))))
@@ -45,6 +47,46 @@
 			 :relations rel-all
 			 :agents (kripke-model-agents M)
 			 :real-worlds (list e-obs)))))
+
+(defun make-state-change-update (M observer precondition from-state to-state &key (others nil))
+  (let* ((observing-agent (if (agent-p observer) ;
+			      observer 
+			      (find-agent observer (kripke-model-agents M))))
+	 (other-observers (mapcar #'(lambda (ag)
+				      (if (agent-p ag) 
+					  ag
+					  (find-agent ag (kripke-model-agents M))))
+				  others))
+	 (all-observers (union other-observers (list observing-agent))))
+    (when (not observing-agent) 
+      (error "agent not found"))
+    (let* ((e-ign-sc (make-world :name "e-ign-sc"
+				 :propositions '(:TRUE)))
+	   (e-sc (make-world :name "e-sc"
+			     :propositions (unify-formula
+					    '(:AND
+					      (:KNOWS ?AG ?PRE)
+					      ?FROM)
+					    (pairlis '(?AG ?PRE ?FROM)
+						     (list observer precondition from-state)))
+			     :substitutions (list (cons from-state to-state))))
+	   (rel-all (mapcar #'(lambda (agent)
+				(cons agent
+				      (append
+				       (list
+					(make-relation :from e-ign-sc :to e-ign-sc)
+					(make-relation :from e-sc     :to e-sc))
+				       (when (not (member agent all-observers))
+					 (list 
+					  (make-relation :from e-ign-sc :to e-sc)
+					  (make-relation :from e-sc     :to e-ign-sc))))))
+			    (kripke-model-agents M))))
+      (make-kripke-model :worlds (list e-ign-sc e-sc)
+			 :relations rel-all
+			 :agents (kripke-model-agents M)
+			 :real-worlds (list e-sc)))))
+			       
+
 
 (defun wsn-learn-prop (M who prop)
   (product-update M (make-observe-proposition-update M who prop)))

@@ -24,10 +24,12 @@
 (defun generate-graphviz-dot-file-string (M &key (draw-reflexive t))
   (let ((string-list '("strict graph G {")))
     (dolist (world (kripke-model-worlds M))
-      (push (format nil "\"~a\" [label = \"~a : ~{~a~^, ~}\"];"
-		    (world-name world) (world-name world) (world-propositions world)
-		    )
-	    string-list))
+      (let ((node-description (if (member world (kripke-model-real-worlds M))
+				  (format nil "\"~a\" [label = \"~a : ~{~a~^, ~}\" style=filled fillcolor=grey];"
+					  (world-name world) (world-name world) (world-propositions world))
+				  (format nil "\"~a\" [label = \"~a : ~{~a~^, ~}\"];"
+					  (world-name world) (world-name world) (world-propositions world)))))
+	(push node-description string-list)))
     (let ((rels-found '()))
       (dolist (agent (kripke-model-agents M))
 	(let ((rels (find-relation-for-agent M agent)))
