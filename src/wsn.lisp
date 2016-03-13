@@ -1,5 +1,5 @@
 (defpackage #:wsn
-  (:use #:cl #:kripke #:del #:message #:comgraph)
+  (:use #:cl #:iterate #:alexandria #:kripke #:del #:message #:comgraph)
   (:export #:can-send-p
 	   #:make-observe-proposition-update
 	   #:make-state-change-update-experimental
@@ -35,15 +35,10 @@
 			      :additions (list prop)))
 	   (e-not (make-world :name "e-not-obs"
 			      :propositions '(:TRUE)))
-	   (rel-all (mapcar #'(lambda (agent)
-				(cons agent 
-				      (append 
-				       (list (make-relation :from e-obs :to e-obs)
-					     (make-relation :from e-not :to e-not))
-				       (when (not (eq observing-agent agent))
-					 (list (make-relation :from e-obs :to e-not)
-					       (make-relation :from e-not :to e-obs))))))
-			    (kripke-model-agents M))))
+	   (rel-all (make-empty-relations (kripke-model-agents M) (list e-obs e-not))))
+      (iter  (for ag in (kripke-model-agents M))
+	     (unless (eq observing-agent ag)
+	       (connect-worlds! rel-all e-obs e-not ag)))
       (make-kripke-model :worlds (list e-obs e-not)
 			 :relations rel-all
 			 :agents (kripke-model-agents M)
@@ -58,7 +53,9 @@
 					  ag
 					  (find-agent ag (kripke-model-agents M))))
 				  others))
-	 (all-observers (union other-observers (list observing-agent))))
+	 (all-observers (union other-observers (list observing-agent)))
+	 (independent (= (length all-observers)
+			 (length (kripke-model-agents M)))))
     (when (not observing-agent) 
       (error "agent not found"))
     (let* ((e-ign-sc (make-world :name "e-ign-sc"
@@ -71,18 +68,13 @@
 					    (pairlis '(?AG ?PRE ?FROM)
 						     (list observer precondition from-state)))
 			     :substitutions (list (cons from-state to-state))))
-	   (rel-all (mapcar #'(lambda (agent)
-				(cons agent
-				      (append
-				       (list
-					(make-relation :from e-ign-sc :to e-ign-sc)
-					(make-relation :from e-sc     :to e-sc))
-				       (when (not (member agent all-observers))
-					 (list 
-					  (make-relation :from e-ign-sc :to e-sc)
-					  (make-relation :from e-sc     :to e-ign-sc))))))
-			    (kripke-model-agents M))))
-      (make-kripke-model :worlds (list e-ign-sc e-sc)
+	   (rel-all (make-empty-relations (kripke-model-agents M) (list e-ign-sc e-sc))))
+      (iter (for ag in (kripke-model-agents M))
+	    (unless (member ag all-observers)
+	      (connect-worlds! rel-all e-ign-sc e-sc ag)))
+      (make-kripke-model :worlds (append (list e-sc) (if independent 
+							 nil
+							 (list e-ign-sc)))
 			 :relations rel-all
 			 :agents (kripke-model-agents M)
 			 :real-worlds (list e-sc)))))
@@ -114,23 +106,14 @@
 					       '(?TO)
 					       (pairlis '(?TO)
 							(list to-state)))))
-	   (rel-all (mapcar #'(lambda (agent)
-				(cons agent
-				      (append
-				       (list
-					(make-relation :from e-ign-sc :to e-ign-sc)
-					(make-relation :from e-sc     :to e-sc)
-					(make-relation :from e-no-sc  :to e-no-sc)
-					(make-relation :from e-sc     :to e-no-sc)
-					(make-relation :from e-no-sc  :to e-sc))
-				       (when (not (member agent all-observers))
-					 (list 
-					  (make-relation :from e-ign-sc :to e-no-sc)
-					  (make-relation :from e-no-sc  :to e-ign-sc)
-					  (make-relation :from e-ign-sc :to e-sc)
-					  (make-relation :from e-sc     :to e-ign-sc))))))
-			    (kripke-model-agents M))))
-      (format t "~S~%" e-sc)
+	   (rel-all (make-empty-relations (kripke-model-agents M) (list e-ign-sc
+									e-sc
+									e-no-sc))))
+      (iter (for ag in (kripke-model-agents M))
+	    (connect-worlds! rel-all e-no-sc e-sc ag)
+	    (unless (member ag all-observers)
+	      (connect-worlds! rel-all e-ign-sc e-no-sc ag)
+	      (connect-worlds! rel-all e-ign-sc e-sc ag)))
       (make-kripke-model :worlds (append (list e-sc e-no-sc) (if independent 
 								 nil
 								 (list e-ign-sc)))

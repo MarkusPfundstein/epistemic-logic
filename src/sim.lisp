@@ -19,10 +19,11 @@
       (write-graphviz-png-file M dest :draw-reflexive nil :keep-dot-file keep-dot-file))))
 
 (defun run-test-sim (M-start events &key (dest-path "~") (keep-dot-file nil))
-  (let ((M-current M-start)
-	(ts 0)
-	(model-counter 0)
-	(event-stack (mapcar #'(lambda (ev) (cons :user-event ev)) events)))
+  (let* ((M-current M-start)
+	 (ts 0)
+	 (model-counter 0)
+	 (user-events events)
+	 (event-stack (list (cons :user-event (pop user-events)))))
     (write-model M-current model-counter dest-path)
     (loop do
 	 (let ((ev (pop event-stack)))
@@ -42,6 +43,7 @@
 	       (format t "[ERROR] no real world in Kripke model anymore~%")
 	       (return-from run-test-sim M-current)))
 	   (when (emptyp event-stack)
+	     (format t "- event stack empty. check protocols -~%")
 	     (when-let ((action-updates (evaluate-protocols M-current ts)))
 	       (iter (for proto-action in action-updates)
 		     (if (listp proto-action)
@@ -51,7 +53,12 @@
 			       (push (cons :proto-event action) event-stack))
 			 (progn
 			   (push (cons :proto-event proto-action) event-stack)
-			   (format t "[~S] push action~%" ts)))))))
+			   (format t "[~S] push action~%" ts)))))
+	     (when (emptyp event-stack)
+	       (format t "- event stack still empty. check :user-events -~%")
+	       (when-let ((new-e (pop user-events)))
+		 (format t "[~S] push user event~%" ts)
+		 (push (cons :user-event new-e) event-stack)))))
 	 while (not (emptyp event-stack)))
     M-current))
     ; at the end.. iterate end-form-list

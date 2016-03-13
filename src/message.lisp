@@ -4,7 +4,7 @@
 	   #:message-sender
 	   #:message-receiver
 	   #:message-content)
-  (:use #:cl #:kripke #:del))
+  (:use #:cl #:iterate #:alexandria #:kripke #:del))
 
 (in-package #:message)
 
@@ -36,18 +36,13 @@
 					    (message-content message))))))
 	 (e-not (make-world
 		 :name "e-not"
-		 :propositions '(:TRUE)))
-	 (rel-all (mapcar #'(lambda (agent) 
-			      (cons agent 
-				    (append 
-				     (list (make-relation :from em :to em)
-					   (make-relation :from e-not :to e-not))
-				     (when (not (is-recipient agent message))
-				       (list (make-relation :from em :to e-not)
-					     (make-relation :from e-not :to em))))))
-		       (kripke-model-agents M))))
+		 :propositions '(:TRUE))) ; :TRUE must be in paranthesis
+	 (rels (make-empty-relations (kripke-model-agents M) (list em e-not))))
+    (iter (for ag in (kripke-model-agents M))
+	  (unless (is-recipient ag message)
+	    (connect-worlds! rels em e-not ag)))
     (make-kripke-model :worlds (append (list em) (if independent nil (list e-not)))
-		       :relations rel-all
+		       :relations rels
 		       :agents (kripke-model-agents M)
 		       :real-worlds (list (if positive em e-not)))))
 

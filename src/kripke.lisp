@@ -4,6 +4,9 @@
 	   #:models-all
 	   #:unify-formula
 	   #:make-world 
+	   #:connect-worlds
+	   #:connect-worlds!
+	   #:make-empty-relations
 	   #:world-name
 	   #:find-world-by-name
 	   #:find-real-world-by-name
@@ -76,6 +79,29 @@
   agents
   real-worlds)
 
+(defun connect-worlds (rels w1 w2 agents)
+  (let ((lst (if (listp agents) 
+		 agents
+		 (list agents))))
+    (iter (for p in rels)
+	  (if (member (car p) lst)
+	      (collect (append p 
+			       (if (eq w1 w2)
+				   (list (make-relation :from w1 :to w2))
+				   (list (make-relation :from w1 :to w2)
+					 (make-relation :from w2 :to w1)))))
+	      (collect p)))))
+
+(defmacro connect-worlds! (rels w1 w2 agents)
+  `(setf ,rels (connect-worlds ,rels ,w1 ,w2 ,agents))) 
+
+(defun make-empty-relations (agents &optional reflexive-worlds)
+  (let ((rel (mapcar #'(lambda (ag) (list ag)) agents)))
+    (iter (for rw in reflexive-worlds)
+	  (iter (for ag in agents)
+		(connect-worlds! rel rw rw ag)))
+    rel))
+
 (defun find-world-by-name (M name)
   (find-if #'(lambda (n) (string= (world-name n) name))
 	   (kripke-model-worlds M)))
@@ -103,8 +129,6 @@
   (remove-if-not #'(lambda (v) (eq (relation-from v) w)) (find-relation-for-agent M a)))
 
 (defun unify-formula (formula map)
-  ;(format t "unify ~S~%" formula)
-  ;(format t "with ~S~%" map)
   (if (listp formula)
       (iter (for sf in formula)
 	    (collect (unify-formula sf map)))
@@ -123,18 +147,14 @@
 			(find-relation-for-agent-and-world M a w))))))
 
 (defun yesterday-models (M w form)
-  ;(format t "~S~%" form)
-  ;(format t "~S~%" (find-previous-worlds M w))
   (not (null (find-if #'(lambda (pw)
 			  (models (kripke-model-previous-model M) pw form))
 		      (find-previous-worlds M w)))))
 
 (defun observe-func (M w a-name form)
-  ;(format t "test observe (agent ~S) ~S~%" a-name form)
   (let ((formula (unify-formula
 		  '(:AND (:KNOWS ?ag ?phi) (:YESTERDAY (:NOT (:KNOWS ?ag ?phi))))
 		  (pairlis '(?ag ?phi) (list a-name form)))))
-    ;(format t "formula ~S~%" formula)
     (models M w formula)))
 
 (defun models-list (M w form)
