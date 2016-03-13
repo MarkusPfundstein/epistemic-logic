@@ -24,7 +24,9 @@
 
 ; (message sender-name formula (receiver_1, ..., receiver_n))
 (defun make-message-action-model (M message &key (positive t))
-  (let* ((em (make-world 
+  (let* ((independent (= (length (message-receiver message))
+			 (length (kripke-model-agents M))))
+	 (em (make-world 
 	      :name "em" 
 	      :additions (list message)
 	      :propositions (unify-formula 
@@ -44,7 +46,7 @@
 				       (list (make-relation :from em :to e-not)
 					     (make-relation :from e-not :to em))))))
 		       (kripke-model-agents M))))
-    (make-kripke-model :worlds (list em e-not)
+    (make-kripke-model :worlds (append (list em) (if independent nil (list e-not)))
 		       :relations rel-all
 		       :agents (kripke-model-agents M)
 		       :real-worlds (list (if positive em e-not)))))

@@ -1,7 +1,7 @@
-(defpackage #:state-change-before-message
+(defpackage #:state-change-before-message-b-not
     (:use #:cl #:iterate #:alexandria #:func #:kripke #:del #:message #:comgraph #:wsn #:drawing #:sim))
 
-(in-package #:state-change-before-message)
+(in-package #:state-change-before-message-b-not)
 
 (defparameter t-world-w (make-world :name "w"
 				    :propositions '(:OPEN)))
@@ -65,12 +65,11 @@
 						  res)))
 			   :action-fn (list 
 				       (lambda (M ts)
-					 (let ((f ':TRUE))
-					   (format t "[~S] make experimental state change model for a: ~S~%" ts f)
-					   (make-state-change-update-experimental
-					    M 'a ':OPEN ':CLOSED :others '(b c))))
+					 (format t "[~S] make experimental state change model for a~%" ts)
+					 (make-state-change-update-experimental
+					  M 'a ':OPEN ':CLOSED :others '(c)))
 				       (lambda (M ts)
-					 (let ((f '(a :CLOSED (a b c))))
+					 (let ((f '(a :CLOSED (a c))))
 					   (format t "[~S] make message action model for a: ~S~%" ts f)
 					   (make-message-action-model M f))))))
 
@@ -123,7 +122,7 @@
 
 (defun run-experiment (&key (return-model nil))
   (let ((m (run-test-sim M-init test-events 
-			 :dest-path "/Users/markus/experiments/state-change-before-message" 
+			 :dest-path "/Users/markus/experiments/state-change-before-message-b-not" 
 			 :keep-dot-file nil)))
     (if return-model 
       m

@@ -17,4 +17,5 @@
 	       (:file "src/sim")
 	       (:file "src/tests")
 	       (:file "experiments/invalid-semantics")
-	       (:file "experiments/state-change-before-message")))
+	       (:file "experiments/state-change-before-message")
+	       (:file "experiments/state-change-before-message-b-not")))
