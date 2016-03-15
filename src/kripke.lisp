@@ -79,21 +79,21 @@
   agents
   real-worlds)
 
-(defun connect-worlds (rels w1 w2 agents)
+(defun connect-worlds (rels w1 w2 agents &key (symmetric t))
   (let ((lst (if (listp agents) 
 		 agents
 		 (list agents))))
     (iter (for p in rels)
 	  (if (member (car p) lst)
 	      (collect (append p 
-			       (if (eq w1 w2)
+			       (if (or (not symmetric) (eq w1 w2))
 				   (list (make-relation :from w1 :to w2))
 				   (list (make-relation :from w1 :to w2)
 					 (make-relation :from w2 :to w1)))))
 	      (collect p)))))
 
-(defmacro connect-worlds! (rels w1 w2 agents)
-  `(setf ,rels (connect-worlds ,rels ,w1 ,w2 ,agents))) 
+(defmacro connect-worlds! (rels w1 w2 agents &key (symmetric t))
+  `(setf ,rels (connect-worlds ,rels ,w1 ,w2 ,agents :symmetric ,symmetric))) 
 
 (defun make-empty-relations (agents &optional reflexive-worlds)
   (let ((rel (mapcar #'(lambda (ag) (list ag)) agents)))

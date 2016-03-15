@@ -18,4 +18,6 @@
 	       (:file "src/tests")
 	       (:file "experiments/invalid-semantics")
 	       (:file "experiments/state-change-before-message")
-	       (:file "experiments/state-change-before-message-b-not")))
+	       (:file "experiments/state-change-before-message-b-not")
+	       (:file "experiments/doxastic1")
+	       (:file "experiments/doxastic2")))

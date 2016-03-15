@@ -114,8 +114,8 @@
 				(format t "[~S] call event ~S~%" ts f)
 				(make-observe-proposition-update M 'b f)))))
 
-(defun run-experiment ()
-  (run-test-sim M-init test-events :dest-path "/Users/markus/experiments/invalid-semantics")
+(defun run-experiment (&key (exp-path "/Users/markus/experiments/invalid-semantics"))
+  (run-test-sim M-init test-events :dest-path exp-path)
   t)
 					     
 

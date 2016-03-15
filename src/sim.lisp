@@ -13,10 +13,18 @@
 		      (when (funcall (protocol-precondition-fn proto) M ts)
 			(collect (protocol-action-fn proto))))))))
   
-(defun write-model (M ts dest-path &key (keep-dot-file nil) (prefix "/m-"))
+(defun write-model (M ts dest-path &key
+				     (keep-dot-file nil)
+				     (prefix "/m-")
+				     (draw-reflexive nil)
+				     (digraph nil))
   (when dest-path
     (let ((dest (concatenate 'string dest-path prefix (write-to-string ts) ".dot")))
-      (write-graphviz-png-file M dest :draw-reflexive nil :keep-dot-file keep-dot-file))))
+      (write-graphviz-png-file M
+			       dest
+			       :draw-reflexive draw-reflexive
+			       :keep-dot-file keep-dot-file
+			       :digraph digraph))))
 
 (defun run-test-sim (M-start events &key (dest-path "~") (keep-dot-file nil))
   (let* ((M-current M-start)

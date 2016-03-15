@@ -2,6 +2,8 @@
   (:use #:cl #:iterate #:alexandria #:kripke #:del #:message #:comgraph)
   (:export #:can-send-p
 	   #:make-observe-proposition-update
+	   #:make-doxastic-observe-proposition-update
+	   #:make-doxastic-observe-proposition-update-experimental
 	   #:make-state-change-update-experimental
 	   #:make-state-change-update
 	   #:wsn-message-update
@@ -22,6 +24,53 @@
   (find-if #'(lambda (agent) (equal (string-upcase (agent-name agent))
 				    (string-upcase ag-name)))
 	   agents))
+
+(defun make-doxastic-observe-proposition-update (M observer prop)
+  ; To-DO: should work for multiple agents
+  (let ((observing-agent (if (agent-p observer) 
+			     observer 
+			     (find-agent observer (kripke-model-agents M)))))
+    (when (not observing-agent) 
+      (error "agent not found"))
+    (let* ((e-obs (make-world :name "e-obs" 
+			      :propositions '(:TRUE) 
+			      :additions (list prop)))
+	   (e-not (make-world :name "e-not-obs"
+			      :propositions '(:TRUE)))
+	   (rel-all (make-empty-relations (kripke-model-agents M))))
+      (connect-worlds! rel-all e-not e-not (kripke-model-agents M))
+      (iter  (for ag in (kripke-model-agents M))
+	     (if (eq observing-agent ag)
+		 (connect-worlds! rel-all e-obs e-obs ag)
+		 (connect-worlds! rel-all e-obs e-not ag :symmetric nil)))
+      (make-kripke-model :worlds (list e-obs e-not)
+			 :relations rel-all
+			 :agents (kripke-model-agents M)
+			 :real-worlds (list e-obs)))))
+
+; invalid semantics I guess
+(defun make-doxastic-observe-proposition-update-experimental (M observer prop)
+  ; To-DO: should work for multiple agents
+  (let ((observing-agent (if (agent-p observer) 
+			     observer 
+			     (find-agent observer (kripke-model-agents M)))))
+    (when (not observing-agent) 
+      (error "agent not found"))
+    (let* ((e-obs (make-world :name "e-obs" 
+			      :propositions '(:TRUE) 
+			      :additions (list prop)))
+	   (e-not (make-world :name "e-not-obs"
+			      :propositions '(:TRUE)))
+	   (rel-all (make-empty-relations (kripke-model-agents M))))
+      (connect-worlds! rel-all e-not e-not (kripke-model-agents M))
+      (connect-worlds! rel-all e-obs e-obs (kripke-model-agents M)) ; this is experimental
+      (iter  (for ag in (kripke-model-agents M))
+	     (unless (eq observing-agent ag)
+		 (connect-worlds! rel-all e-obs e-not ag :symmetric nil)))
+      (make-kripke-model :worlds (list e-obs e-not)
+			 :relations rel-all
+			 :agents (kripke-model-agents M)
+			 :real-worlds (list e-obs)))))
 
 (defun make-observe-proposition-update (M observer prop)
   ; To-DO: should work for multiple agents
