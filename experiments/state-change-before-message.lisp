@@ -121,9 +121,9 @@
 				(format t "[~S] call event ~S~%" ts f)
 				(make-observe-proposition-update M 'b f)))))
 
-(defun run-experiment (&key (return-model nil))
+(defun run-experiment (&key (return-model nil) (exp-path nil))
   (let ((m (run-test-sim M-init test-events 
-			 :dest-path "/Users/markus/experiments/state-change-before-message" 
+			 :dest-path exp-path
 			 :keep-dot-file nil)))
     (if return-model 
       m

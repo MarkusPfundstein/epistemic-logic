@@ -23,12 +23,6 @@
 (defun find-world (name worlds)
   (find-if #'(lambda (n) (string= (world-name n) name)) worlds))
 
-(defun update-val (props add-props sub-props)
-  (union
-   (union (set-difference props (mapcar #'(lambda (e) (car e)) sub-props))
-	  add-props)
-   (mapcar #'(lambda (e) (cdr e)) sub-props)))
-
 (defun make-new-worlds (M A)
   (iter-cartesian2 ((w e) (kripke-model-worlds M) (kripke-model-worlds A))
       (when (models M w (world-preconditions e))

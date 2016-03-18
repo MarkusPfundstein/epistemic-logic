@@ -3,6 +3,7 @@
 	   #:models-some
 	   #:models-all
 	   #:unify-formula
+	   #:update-val
 	   #:make-world 
 	   #:connect-worlds
 	   #:connect-worlds!
@@ -139,12 +140,109 @@
 (defun val (w p)
   (not (null (member2 p (world-propositions w)))))
 
-(defun possible (M w a-name form)
+(defun possible (M w a-name form &key (A-m nil))
   (let ((a (find-agent-by-name M (string a-name))))
     (when (not a)
       (error "error finding agent in function possible"))
-    (not (null (find-if #'(lambda (r) (models M (relation-to r) form))
+    (not (null (find-if #'(lambda (r)
+			    (models M (relation-to r) form :A A-m))
 			(find-relation-for-agent-and-world M a w))))))
+
+(defun post (prop world event)
+  (not (null (find prop
+		   (update-val (world-propositions world)
+			       (world-additions event)
+			       (world-substitutions event))
+		   :test #'equal))))
+
+; taken from del package. must move into Kripke and be removed there
+(defun update-val (props add-props sub-props)
+  (union
+   (union (set-difference props (mapcar #'(lambda (e) (car e)) sub-props))
+	  add-props)
+   (mapcar #'(lambda (e) (cdr e)) sub-props)))
+
+(defun after-event-prop (M A w event-name prop)
+  (format t "after-event-prop: ~S - ~S~%" event-name prop)
+  (when-let ((event (find-world-by-name A event-name)))
+    (let* ((precond (world-preconditions event))
+	   (consequent (if (post prop w event) '(:TRUE) '(:FALSE)))
+	   (reduction-form (unify-formula
+			   '(:IMPLIES ?PRE-EVENT ?POST)
+			   (pairlis '(?PRE-EVENT ?POST)
+				    (list precond
+					  consequent)))))
+      (format t "    reduction-form: ~S~%" reduction-form)
+      (models M w reduction-form :A A))))
+
+(defun after-event-knows-form (M A w event-name agent-name form)
+  (format t "after-event-knows-form: ~S - ~S~%" agent-name form)
+  (when-let ((agent (find-agent-by-name M agent-name))
+	     (event (find-world-by-name A event-name))
+	     (prop form))
+    (format t "prop ~S~%" prop)
+    (let* ((precond (world-preconditions event))
+	   (conjunction-parts
+	    (mapcar #'(lambda (e2-rel)
+			(let* ((e2 (relation-to e2-rel)))
+			  (unify-formula '(:KNOWS
+					   ?AGENT (:AFTER-EVENT
+						   ?EVENT
+						   ?PROP))
+					 (pairlis '(?AGENT ?EVENT ?PROP)
+						  (list agent-name
+							(world-name e2)
+							prop)))))
+						   
+			;(let* ((e2 (relation-to e2-rel))
+			;       (precond-e2 (world-preconditions e2))
+			;       (consequent (if (post prop w e2)
+		;			       '(:TRUE)
+;					       '(:FALSE))))
+		;	  (unify-formula '(:IMPLIES ?PRE-EVENT ?POST)
+		;			 (pairlis '(?PRE-EVENT ?POST)
+		;				  (list precond-e2
+		;					consequent)))))
+		    (find-relation-for-agent-and-world A agent event)))
+	   ;(x (format t "conj parts ~S~%" (length conjunction-parts)))
+	   (conjunction (if (> (length conjunction-parts) 1)
+			    (append '(:AND) conjunction-parts)
+			    (car conjunction-parts)))
+	    
+	   (reduction-form (unify-formula
+			    '(:IMPLIES ?PRE-EVENT ?CONJUNCTION)
+			    (pairlis '(?PRE-EVENT ?CONJUNCTION)
+				     (list precond conjunction)))))
+      ;(format t "parts: ~S~%" conjunction-parts)
+      ;(format t "reduction-form: ~S~%" reduction-form)
+      (models M w reduction-form :A A))))
+
+(defun form-begins-with-op (form)
+  (when (listp form)
+    (let ((op (car form)))
+      (or (equal ':AND op)
+	  (equal ':OR  op)
+	  (equal ':IMPLIES op)
+	  (equal ':KNOWS op)
+	  (equal ':POSSIBLE op)
+	  (equal ':NOT op)
+	  (equal ':OBSERVE op)
+	  (equal ':YESTERDAY op)
+	  (equal ':AFTER-EVENT op)))))
+
+(defun after-event (M A w event-name form)
+  (unless A (error ":AFTER-EVENT can only be used with :A key in models~%"))
+  (format t "after-event: ~S - ~S~%" event-name form)
+  (if (form-begins-with-op form)
+      (let ((op (car form)))
+	(case op
+	  (:KNOWS
+	   (format t "after-event-knows-axiom~%")
+	   (after-event-knows-form M A w event-name (cadr form) (caddr form)))
+	  (t
+	   (error "sorry! only supported operator after :AFTER-EVENT is :KNOWS"))))
+      (after-event-prop M A w event-name form)))
+      
 
 (defun yesterday-models (M w form)
   (not (null (find-if #'(lambda (pw)
@@ -157,33 +255,41 @@
 		  (pairlis '(?ag ?phi) (list a-name form)))))
     (models M w formula)))
 
-(defun models-list (M w form)
+(defun models-list (M w form &key (A nil))
   (let ((op (car form))
 	(rest-form (cdr form)))
     (case op
       (:NOT
-       (not (models M w rest-form)))
+       (not (models M w rest-form :A A)))
       (:AND 
-       (and (models M w (car rest-form)) 
-	    (models M w (cadr rest-form))))
+       (and (models M w (car rest-form) :A A) 
+	    (models M w (cadr rest-form) :A A)))
       (:OR
-       (or (models M w (car rest-form))
-	   (models M w (cadr rest-form))))
+       (or (models M w (car rest-form) :A A)
+	   (models M w (cadr rest-form) :A A)))
       (:IMPLIES
-       (or (not (models M w (car rest-form)))
-	   (models M w (cadr rest-form))))
+       (or (not (models M w (car rest-form) :A A))
+	   (models M w (cadr rest-form) :A A)))
       (:POSSIBLE
-       (possible M w (car rest-form) (cadr rest-form)))
+       (possible M w (car rest-form) (cadr rest-form) :A-m A))
       (:KNOWS
-       (not (possible M w (car rest-form) (list :NOT (cadr rest-form)))))
+       (not (possible M
+		      w
+		      (car rest-form)
+		      (list :NOT (cadr rest-form))
+		      :A-m A)))
       (:YESTERDAY
        (yesterday-models M w (car rest-form)))
       (:OBSERVE
        (observe-func M w (car rest-form) (cadr rest-form)))
+      (:AFTER-EVENT
+       (after-event M A w (car rest-form) (cadr rest-form)))
       (:TRUE
        t)
+      (:FALSE
+       nil)
       (t
-       (models M w op)))))
+       (models M w op :A A)))))
 
 ; returns true if form is true in at least one world in M
 (defun models-some (M form)
@@ -195,10 +301,10 @@
   (not (find-nil (mapcar #'(lambda (w) (models M (world-name w) form))
 			 (kripke-model-worlds M)))))
 
-(defun models (M w form)
+(defun models (M w form &key (A nil))
   (if (stringp w)
-      (models M (find-world-by-name M w) form)
+      (models M (find-world-by-name M w) form :A A)
       (if (val w form) 
 	  t
 	  (when (and (not (null form)) (listp form)) 
-	    (models-list M w form)))))
+	    (models-list M w form :A A)))))
