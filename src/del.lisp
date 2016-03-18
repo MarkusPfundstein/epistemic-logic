@@ -23,15 +23,22 @@
 (defun find-world (name worlds)
   (find-if #'(lambda (n) (string= (world-name n) name)) worlds))
 
-(defun make-new-worlds (M A)
+(defparameter *update-val* 'update-val)
+
+(defun make-new-worlds (M A &key (update-fun *update-val*))
   (iter-cartesian2 ((w e) (kripke-model-worlds M) (kripke-model-worlds A))
       (when (models M w (world-preconditions e))
 	(collect (make-world :name (make-new-world-name (world-name w)
 							(world-name e))
-			     :propositions (update-val
-					    (world-propositions w)
-					    (world-additions e)
-					    (world-substitutions e)))))))
+			     :propositions (funcall update-fun
+						    (world-propositions w)
+						    (world-additions e)
+						    (world-substitutions e)
+						    M
+						    A
+						    w
+						    e
+						    (kripke-model-agents M)))))))
 
 (defun make-new-relation (rel-m rel-a new-worlds)
   (when-let* ((new-from-name (make-new-world-name
@@ -84,14 +91,14 @@
   (and 
    (eq (length (kripke-model-agents M)) 
        (length (kripke-model-agents A)))))
-       
-(defun product-update (M A)
+
+(defun product-update (M A &key (update-fun *update-val*))
   ;(format t "real worlds:~%M:~S~%A:~S~%" 
 	;  (mapcar #'(lambda (rw) (world-name rw)) (kripke-model-real-worlds M))
 	 ; (mapcar #'(lambda (rw) (world-name rw)) (kripke-model-real-worlds A)))
   (if (not (update-possible-p M A))
       (error "Set of agents of M and A differ")
-      (let* ((new-worlds (make-new-worlds M A))
+      (let* ((new-worlds (make-new-worlds M A :update-fun update-fun))
 	     (new-relations (make-new-relations M A new-worlds))
 	     (new-real-worlds (make-new-real-worlds M A new-worlds))
 	     (new-time-relations (make-new-time-relations M A new-worlds)))

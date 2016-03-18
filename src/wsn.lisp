@@ -1,6 +1,8 @@
 (defpackage #:wsn
-  (:use #:cl #:iterate #:alexandria #:kripke #:del #:message #:comgraph)
+  (:use #:cl #:iterate #:func #:alexandria #:kripke #:del #:message #:comgraph)
   (:export #:can-send-p
+	   #:update-val-omega
+	   #:omega-axiom
 	   #:make-observe-proposition-update
 	   #:make-doxastic-observe-proposition-update
 	   #:make-doxastic-observe-proposition-update-experimental
@@ -10,6 +12,78 @@
 	   #:wsn-learn-prop))
 
 (in-package #:wsn)
+
+(defun omega-axiom (M A world-name event-name agent-name prop)
+  (let ((reduction-form (unify-formula '(:AND
+					 (:NOT (:OMEGA ?AGENT ?PROP))
+					 (:AND 
+					  (:NOT (:KNOWS ?AGENT ?PROP))
+					  (:AFTER-EVENT ?EVENT (:KNOWS
+							       ?AGENT
+							       ?PROP))))
+				       (pairlis '(?AGENT ?PROP ?EVENT)
+						(list agent-name
+						      prop
+						      event-name)))))
+    (format t "omega-axiom, reduction-form: ~S~%" reduction-form)
+    (models M world-name reduction-form :A A)))
+
+(defun find-omegas-in-val (props)
+  (find-all-if #'(lambda (p) (and (listp p) (eq ':OMEGA
+					     (car p))))
+	       props))
+
+(defun find-new-omegas (M A w e agents new-values)
+  (format t "---- NEW VALUES: ~S~%" new-values)
+  (iter-cartesian2 ((ag p) agents new-values)
+		   (let* ((omega-f (unify-formula '(:OMEGA ?AG ?PROP)
+						  (pairlis '(?AG ?PROP)
+							   (list (agent-symbol ag)
+								 p)))))
+		     (when (omega-axiom M
+					A
+					(world-name w)
+					(world-name e)
+					(agent-symbol ag)
+					p)
+		       (collect omega-f)))))
+				      
+;		   (let* ((omega-f (unify-formula '(:OMEGA ?AG ?PROP)
+;						  (pairlis '(?AG ?PROP)
+;							   (list (agent-symbol ag)
+;								 p))))
+;			  (f (unify-formula '(:AFTER-EVENT
+;					      ?EV
+;					      (:KNOWS
+;					       ?AG
+;					       ?PROP))
+;					    (pairlis '(?EV ?AG ?PROP)
+;						    (list (world-name e)
+;							  (agent-symbol ag)
+;							  p)))))
+;;		     (format t "-> test (~S, ~S) |= ~S for ~S~%"
+;			   (world-name w)
+;			   (world-name e)
+;			   p
+;			   (agent-name ag))
+;		     (format t "-> formula ~S~%"f)
+;		     (when-let ((res (models M w f :A A)))
+;		       (format t "----> ~S~%" res)
+;		       (collect omega-f)))))
+			
+(defun update-val-omega (props add-props sub-props M A w e agents)
+  (let* ((new-values (update-val props add-props sub-props M A w e agents))
+	 (all-omegas (find-omegas-in-val new-values))
+	 (step1 (set-difference new-values all-omegas :test #'equal))
+	 (x (format t "~%~%new-values: ~S~%olds: ~S~%set-diff: ~S~%" new-values all-omegas step1))
+	 (all-new-omegas (find-new-omegas M A w e agents new-values)))
+    (format t "all new omegas: ~S~%~%" all-new-omegas)
+    (union
+     step1
+     all-new-omegas)))
+
+(defun omega-update (M A)
+  (product-update M A :update-fun 'update-val-omega))
 
 (defun can-send-p (M msg)
   (let* ((recs (message-receiver msg))

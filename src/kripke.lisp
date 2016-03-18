@@ -29,6 +29,7 @@
 	   #:world-preconditions
 	   #:make-agent
 	   #:agent-name
+	   #:agent-symbol
 	   #:agent-p
 	   #:relation-p
 	   #:kripke-model-p
@@ -64,7 +65,8 @@
 (defstruct agent
   name
   states
-  protocols)
+  protocols
+  symbol)
 
 (defstruct relation
   from
@@ -148,19 +150,27 @@
 			    (models M (relation-to r) form :A A-m))
 			(find-relation-for-agent-and-world M a w))))))
 
-(defun post (prop world event)
-  (not (null (find prop
-		   (update-val (world-propositions world)
-			       (world-additions event)
-			       (world-substitutions event))
-		   :test #'equal))))
+
 
 ; taken from del package. must move into Kripke and be removed there
-(defun update-val (props add-props sub-props)
+(defun update-val (props add-props sub-props M A w e agents)
   (union
    (union (set-difference props (mapcar #'(lambda (e) (car e)) sub-props))
 	  add-props)
    (mapcar #'(lambda (e) (cdr e)) sub-props)))
+
+
+(defun post (prop world event)
+  (not (null (find prop
+		   (update-val (world-propositions world)
+			       (world-additions event)
+			       (world-substitutions event)
+			       nil
+			       nil
+			       world
+			       event
+			       nil)
+		   :test #'equal))))
 
 (defun after-event-prop (M A w event-name prop)
   (format t "after-event-prop: ~S - ~S~%" event-name prop)

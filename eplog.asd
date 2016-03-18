@@ -20,4 +20,5 @@
 	       (:file "experiments/state-change-before-message")
 	       (:file "experiments/state-change-before-message-b-not")
 	       (:file "experiments/doxastic1")
-	       (:file "experiments/doxastic2")))
+	       (:file "experiments/doxastic2")
+	       (:file "experiments/omega-axiom")))
